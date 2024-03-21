@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitor</title>
+</head>
+<body>
+    <h1>System Monitoring</h1>
+    <form method="get">
+        <label for="machine_select">Choose a machine:</label>
+        <select name="machine_id" id="machine_select" onchange="showGraph(this.value)">
+            <option value="">Select a machine</option>
+        </select>
+    </form>
+    <br>
+    <div id="graph">
+    </div>
+
+    <script>
+        let currentMachineId = null;
+        function updateMachines() {
+            fetch('/machines')
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('machine_select');
+                    const currentValue = select.value || currentMachineId;
+                    select.innerHTML = '<option value="">Select a machine</option>';
+                    data.forEach(machineId => {
+                        const option = document.createElement('option');
+                        option.value = machineId;
+                        option.text = machineId;
+                        option.selected = currentValue === machineId;
+                        select.appendChild(option);
+                    });
+                    if (currentValue) {
+                        showGraph(currentValue);
+                    }
+                })
+                .catch(error => console.error('Error fetching machines:', error));
+        }
+
+        function showGraph(machineId) {
+            currentMachineId = machineId;
+            if (machineId) {
+                const url = `/graph/${machineId}`;
+                fetch(url)
+                    .then(response => response.text())
+                    .then(data => {
+                        document.getElementById('graph').innerHTML = data;
+                    })
+                    .catch(error => console.error('Error fetching the graph:', error));
+            } else {
+                document.getElementById('graph').innerHTML = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateMachines();
+            setInterval(() => {
+                updateMachines();
+                if (currentMachineId) {
+                    showGraph(currentMachineId);
+                }
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
+
